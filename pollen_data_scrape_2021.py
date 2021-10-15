@@ -31,9 +31,11 @@ for x in prefectures:
     df = pd.DataFrame(json)
 
     # Rename the columns of the new dataframe. The column header names came from https://kafun.env.go.jp/apiManual/apiPage2/api-2-2
-    df.columns = ['Measuring station code', 'AMeDAS measurement station code', 'Measurement date', 'Measurement time', 'Measuring station name', 
-    'Measurement station type', 'Prefecture code', 'Name of prefectures', 'City code', 'City name', 'Number of pollen scattered', 'Wind direction',
-    'wind speed', 'temperature', 'Precipitation amount', 'Radar rainfall Whether or not there is snowfall']
+    df.columns = ['station code', 'AMeDAS measurement station code', 'Measurement date', 'hour', 'Measuring station name', 
+    'Measurement station type', 'Prefecture code', 'Name of prefectures', 'City code', 'City name', 'pollen', 'wind_direction',
+    'wind_speed', 'temperature', 'rainfall', 'snowfall_dummy']
+
+    df['prefecture'] = x
 
     # Write the data to the pollen_data_2021 dataframe
     pollen_data_2021 = pollen_data_2021.append(df)
@@ -47,3 +49,21 @@ for x in prefectures:
 # Tell the user that the for loop is complete
 print("For loop complete!")
 
+# Create a dataframe with the unique station names
+stations = pd.DataFrame(pollen_data_2021['Measuring station name'].unique())
+stations['s_point'] = stations.index + 1
+stations.columns = ['Measuring station name', 's_point']
+
+pollen_data_2021 = pd.merge(pollen_data_2021, stations, how = 'left', on = 'Measuring station name')
+
+pollen_data_2021['date'] = pd.to_datetime(pollen_data_2021['Measurement date'])
+pollen_data_2021['year'] = pollen_data_2021['date'].dt.year
+pollen_data_2021['month'] = pollen_data_2021['date'].dt.month
+pollen_data_2021['day'] = pollen_data_2021['date'].dt.day
+
+pollen_data_2021['hour'] = pollen_data_2021['hour'].astype(int)
+
+pollen_data_2021 = pollen_data_2021[['s_point', 'date', 'year', 'month', 'day', 'hour', 'pollen', 'rainfall', 'temperature', 
+'wind_direction', 'wind_speed', 'prefecture']]
+
+pollen_data_2021.to_csv('./pollen_data2021.csv')
